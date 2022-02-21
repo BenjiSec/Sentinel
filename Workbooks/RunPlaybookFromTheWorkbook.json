@@ -1,0 +1,407 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "1170e35c-6411-426f-a04e-ea1f05230feb",
+            "version": "KqlParameterItem/1.0",
+            "name": "ResourceTypes",
+            "label": "Resource Types",
+            "type": 7,
+            "isRequired": true,
+            "isGlobal": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "value": [
+              "microsoft.logic/workflows"
+            ],
+            "isHiddenWhenLocked": true,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "includeAll": true,
+              "showDefault": false
+            }
+          },
+          {
+            "id": "308fcbb9-5db9-4ba4-8464-1718ae269b75",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 604800000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "label": "Time Range"
+          },
+          {
+            "id": "79333c3c-93ff-4719-a4b3-a9382d9646dc",
+            "version": "KqlParameterItem/1.0",
+            "name": "SentinelResourceGroup",
+            "label": "Sentinel Resource Group",
+            "type": 2,
+            "isRequired": true,
+            "isGlobal": true,
+            "query": "Resources\r\n| where type in~ ({ResourceTypes})\r\n| summarize Count = count() by subscriptionId, resourceGroup\r\n| order by Count desc\r\n| extend Rank = row_number()\r\n| project resourceGroup",
+            "value": null,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "98cdffe1-4d05-471c-9fe2-35ef48878327",
+            "version": "KqlParameterItem/1.0",
+            "name": "SentinelWorkspaceName",
+            "label": "Sentinel Workspace Name",
+            "type": 5,
+            "isRequired": true,
+            "isGlobal": true,
+            "query": "where type =~ \"microsoft.operationalinsights/workspaces\"\r\n| where resourceGroup =~ \"{SentinelResourceGroup}\"",
+            "typeSettings": {
+              "resourceTypeFilter": {
+                "microsoft.operationalinsights/workspaces": true
+              },
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          }
+        ],
+        "style": "pills",
+        "queryType": 1,
+        "resourceType": "microsoft.resourcegraph/resources"
+      },
+      "name": "parameters - 1"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityIncident\r\n| summarize arg_max(LastModifiedTime, *) by IncidentNumber\r\n| where Status != 'Closed'\r\n| extend IncidentID = IncidentName\r\n| extend Alerts = extract(\"\\\\[(.*?)\\\\]\", 1, tostring(AlertIds))\r\n| mv-expand AlertIds to typeof(string)\r\n| join \r\n(\r\n    SecurityAlert\r\n    | extend AlertEntities = parse_json(Entities)\r\n    | mv-expand AlertEntities\r\n    | extend sortOrder = case \r\n      ( \r\n        AlertEntities.Type == \"account\",1, AlertEntities.Type == \"host\",2, AlertEntities.Type == \"ip\",3, AlertEntities.Type == \"url\",4, 99\r\n      ) \r\n    | order by sortOrder asc    \r\n) on $left.AlertIds == $right.SystemAlertId\r\n| summarize AlertCount=dcount(AlertIds), entityList=make_set(tostring(AlertEntities.Type)) by TimeGenerated, IncidentNumber, Status, Severity, Title, Alerts, IncidentUrl, Tactics =tostring(AdditionalData.tactics), IncidentID\r\n| project Status, TimeGenerated, IncidentNumber, Severity, Title, IncidentID, AlertCount, Alerts, IncidentUrl\r\n| order by IncidentNumber desc",
+        "size": 0,
+        "title": "Current Existing Cases",
+        "timeContext": {
+          "durationMs": 604800000
+        },
+        "timeContextFromParameter": "TimeRange",
+        "exportedParameters": [
+          {
+            "fieldName": "IncidentID",
+            "parameterName": "IncidentID",
+            "parameterType": 1
+          },
+          {
+            "fieldName": "Severity",
+            "parameterName": "Severity",
+            "parameterType": 1
+          },
+          {
+            "fieldName": "Title",
+            "parameterName": "Title",
+            "parameterType": 1
+          },
+          {
+            "fieldName": "IncidentNumber",
+            "parameterName": "IncidentNumber",
+            "parameterType": 1
+          },
+          {
+            "fieldName": "IncidentUrl",
+            "parameterName": "IncidentUrl",
+            "parameterType": 1
+          }
+        ],
+        "showExportToExcel": true,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{SentinelWorkspaceName}"
+        ],
+        "gridSettings": {
+          "filter": true
+        }
+      },
+      "showPin": true,
+      "name": "query - 2"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "2b32ca73-ddec-4f1b-ae25-93119ac25b82",
+            "version": "KqlParameterItem/1.0",
+            "name": "RunPlaybook",
+            "label": "Run Playbook on Incident?",
+            "type": 10,
+            "value": "Yes",
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n    {\"value\": \"Yes\", \"label\": \"Yes\"},\r\n    {\"value\": \"No\", \"label\": \"No\"}\r\n]",
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 4"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "c67608d5-71dc-4ce4-8817-4c1d061aa087",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "DefaultSubscription",
+                  "type": 1,
+                  "query": "where type =~ 'microsoft.operationalinsights/workspaces'\r\n| distinct subscriptionId",
+                  "isHiddenWhenLocked": true,
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                },
+                {
+                  "id": "ad873bab-02a2-4d81-a136-697bfd04adf8",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "Subscription",
+                  "type": 6,
+                  "query": "summarize by subscriptionId\r\n| project value = strcat(\"/subscriptions/\", subscriptionId), label = subscriptionId, selected = iff(subscriptionId =~ '{DefaultSubscription}', true, false)",
+                  "isHiddenWhenLocked": true,
+                  "typeSettings": {
+                    "additionalResourceOptions": []
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources",
+                  "value": null
+                },
+                {
+                  "id": "930c0987-ac2b-4c12-869d-70f4deca8942",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "PlaybookResourceGroup",
+                  "label": "Playbook Resource Group",
+                  "type": 2,
+                  "isRequired": true,
+                  "query": "Resources\r\n| where type in~ ({ResourceTypes})\r\n| summarize Count = count() by subscriptionId, resourceGroup\r\n| order by Count desc\r\n| extend Rank = row_number()\r\n| project resourceGroup",
+                  "value": null,
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                },
+                {
+                  "id": "1fd77c89-8f0f-4560-a6b8-e82fa8959740",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "PlaybookName",
+                  "label": "Playbook Name",
+                  "type": 5,
+                  "isRequired": true,
+                  "query": "Resources\r\n| where type in~({ResourceTypes})\r\n| extend resourceGroupId = strcat('/subscriptions/', subscriptionId, '/resourceGroups/', resourceGroup)\r\n| where resourceGroup =~ \"{PlaybookResourceGroup}\"// or '*' in~({PlaybookResourceGroup})\r\n| order by name asc\r\n| extend Rank = row_number()\r\n| project label = tostring(name)",
+                  "value": null,
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "queryType": 1,
+                  "resourceType": "microsoft.resourcegraph/resources"
+                },
+                {
+                  "id": "93b0908d-fc55-48d9-8375-2d75b40b2d72",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "TriggerName",
+                  "label": "Trigger Name",
+                  "type": 2,
+                  "isRequired": true,
+                  "query": "{\"version\":\"ARMEndpoint/1.0\",\"data\":null,\"headers\":[],\"method\":\"GET\",\"path\":\"{Subscription}/resourceGroups/{PlaybookResourceGroup}/providers/Microsoft.Logic/workflows/{PlaybookName}/triggers?api-version=2016-06-01\",\"urlParams\":[],\"batchDisabled\":false,\"transformers\":[{\"type\":\"jsonpath\",\"settings\":{\"tablePath\":\"$.value\",\"columns\":[{\"path\":\"$.name\",\"columnid\":\"name\"}]}}]}",
+                  "value": null,
+                  "typeSettings": {
+                    "additionalResourceOptions": [],
+                    "showDefault": false
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "queryType": 12
+                },
+                {
+                  "id": "3fd71435-bb1c-4cc4-ba28-d5259d11cc1f",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "TenantID",
+                  "type": 1,
+                  "isRequired": true,
+                  "value": null,
+                  "label": "Tenant ID"
+                },
+                {
+                  "id": "3987ed64-82ef-4e70-a6eb-f4c40505102e",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "ShowHelp",
+                  "label": "Show Help?",
+                  "type": 10,
+                  "value": "No",
+                  "typeSettings": {
+                    "additionalResourceOptions": []
+                  },
+                  "jsonData": "[\r\n    {\"value\": \"Yes\", \"label\": \"Yes\"},\r\n    {\"value\": \"No\", \"label\": \"No\"}\r\n]",
+                  "timeContext": {
+                    "durationMs": 86400000
+                  }
+                }
+              ],
+              "style": "pills",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "name": "parameters - 0"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "From the list of active Incidents, choose one on which you want to run the Playbook.\r\n\r\nFor \"Playbook Resource Group\" choose Resource Group where the Playbook you want to run.\r\n\r\n\"Playbook Name\" is the Playbook you want to run.\r\n\r\n\"Trigger Name\" is trigger that will be run. Please note that only incident trigger is supported! (Selection must be \"Microsoft_Sentinel_incident\")\r\nTrigger run on alert is not supported!\r\n\r\n\"Tenant ID\" is the tenant where Subscription is on."
+            },
+            "conditionalVisibility": {
+              "parameterName": "ShowHelp",
+              "comparison": "isEqualTo",
+              "value": "Yes"
+            },
+            "name": "text - 1"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "Currently selected incident on which Playbook {PlaybookName} will be run is:\r\n - Title: {Title}\r\n - Incident number: {IncidentNumber}\r\n - Severity: {Severity}\r\n - Incident ID: {IncidentID}\r\n - Incident URL: {IncidentUrl}"
+            },
+            "name": "text - 3"
+          },
+          {
+            "type": 11,
+            "content": {
+              "version": "LinkItem/1.0",
+              "style": "list",
+              "links": [
+                {
+                  "id": "7ccf63ce-3193-4633-b4df-2f7b5e52ba44",
+                  "linkTarget": "ArmAction",
+                  "linkLabel": "Run Microsoft Sentinel Playbook",
+                  "preText": "",
+                  "style": "primary",
+                  "linkIsContextBlade": true,
+                  "armActionContext": {
+                    "path": "{SentinelWorkspaceName}/providers/Microsoft.SecurityInsights/incidents/{IncidentID}/runPlaybook?api-version=2019-01-01-preview",
+                    "headers": [],
+                    "params": [],
+                    "body": "{\r\n \"LogicAppsResourceId\":\"{Subscription}/resourceGroups/{PlaybookResourceGroup}/providers/Microsoft.Logic/workflows/{PlaybookName}\",\r\n \"TenantId\":\"{TenantID}\"\r\n}",
+                    "httpMethod": "POST",
+                    "description": "# ARM actions can potentially modify resources.\n## Please use caution and include a confirmation message in this description when authoring this command."
+                  }
+                }
+              ]
+            },
+            "name": "links - 2"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "RunPlaybook",
+        "comparison": "isEqualTo",
+        "value": "Yes"
+      },
+      "name": "RunPlaybook"
+    }
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
