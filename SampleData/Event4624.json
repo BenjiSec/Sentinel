@@ -1,7 +1,7 @@
 [
   {
     "TenantId": "a3bccb2f-2d11-4948-a776-29e69ac9574f",
-    "TimeGenerated": "07/18/2022, 12:41:04.363 PM",
+    "TimeGenerated": "07/18/2022, 12:49:04.363 PM",
     "SourceSystem": "OpsManager",
     "Account": "CORP\\badactor",
     "AccountType": "User",
@@ -16,7 +16,7 @@
     "SourceComputerId": "d3cc79f7-05ad-4d42-b699-8c444bde4fc1",
     "EventOriginId": "00000000-0000-0000-0000-000000000000",
     "MG": "00000000-0000-0000-0000-000000000001",
-    "TimeCollected": "07/18/2022, 12:41:04.363 PM",
+    "TimeCollected": "07/18/2022, 12:49:04.363 PM",
     "ManagementGroupName": "AOI-00000000-0000-0000-0000-000000000000",
     "AccessList": "",
     "AccessMask": "",
