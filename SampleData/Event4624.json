@@ -3,7 +3,7 @@
     "TenantId": "a3bccb2f-2d11-4948-a776-29e69ac9574f",
     "TimeGenerated": "07/18/2022, 12:41:04.363 PM",
     "SourceSystem": "OpsManager",
-    "Account": "CORP\\chimera",
+    "Account": "CORP\\badactor",
     "AccountType": "User",
     "Computer": "importantserver.corp.cybsec.guru",
     "EventSourceName": "Microsoft-Windows-Security-Auditing",
